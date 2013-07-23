@@ -1,73 +1,58 @@
 import json
 import re
 import calendar
+import datetime
 
-months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-month_info = {'Jan':(0,31),'Feb':(1,28),'Mar':(2,31),'Apr':(3,30),'May':(4,31),
-              'Jun':(5,30),'Jul':(6,31),'Aug':(7,31),'Sep':(8,30),'Oct':(9,31),
-              'Nov':(10,30),'Dec':(11,31)}
+# Dictionary of {'three-letter-month-string':month-number}
+months = calendar.month_abbr[1:]
+month_num = {months[i]:i+1 for i in range(0,12)}
+timestamp = re.compile('\$(\d+).?(\d+)?') # User-inputted timestamp
 
+# Create list of [start_time, stop_time, text] and sort by start_time
 def sort_time(jsfile):
     f = open(jsfile, 'r')
     f.readline()                # Remove useless line
     data = json.loads(f.read()) # List of Tweets; each tweet is a dict
     data.reverse()              # Now in submitted-chronological order
-    # Pass 1: Create list of [start_time, stop_time, text] and sort by start_time
     tweets = []
-    timestamp = re.compile('\$(\d+).?(\d+)?') # User-inputted timestamp
     for tweet in data:
         text = tweet["text"].lower()
         time = tweet["created_at"]   # default timestamp
-        time = time.split()
-        time = [str(time[1]),int(time[2]),int(time[3][:2]+time[3][3:5]),int(time[5])] #Month,Day,HourMinute,Year
+        time = str(time).split()[1:]
+        #datetime - year, month, day, hour, minute
+        time = datetime.datetime(int(time[4]), month_num[time[0]], int(time[1]),
+                                 int(time[2][0:2]), int(time[2][3:5]))
         # Subtract 7 hours from UTC time to give west coast time
-        time[2] -= 700
-        if time[2] < 0: # Back to yesterday
-            time[2] %= 2400
-            time[1] -= 1
-            if time[1] < 1: # Back to last month
-                time[0] = months[month_info[time[0]][0]-1 % 12]
-                time[1] = month_info[time[0]][1] # Days in last month
-                if time[0] == 'Dec': # Back to last year
-                    time[3] -= 1
-                if calendar.isleap(time[3]):
-                    time[1] += 1
-        match = re.search(timestamp, text)
+        # For now, ignore daylight savings
+        time = fixdate(time, 0, -7)
+        match = re.search(timestamp, text) # matches $100.200
         if match:
-            start_stop = match.groups()
-        else:
-            start_stop = []
-        sst = []
-        # Check for user-inputted start/stop timestamp.
-        # Is it from earlier today? or yesterday, <24 hours ago?
-        # Ignore gregorian calendar idiosyncracies (e.g. day=0)
-        if len(start_stop) > 0: # User-inputted at least start timestamp
-            dtime = int(time[2])
-            utime = int(start_stop[0])
-            if utime > dtime: # Timestamp is for yesterday
-                day = int(time[1]) - 1
+            ss = match.groups()
+            start = time.replace(hour=int(ss[0][:-2]), minute=int(ss[0][-2:]))
+            if ss[1]:
+                stop = time.replace(hour=int(ss[1][:-2]), minute=int(ss[1][-2:]))
             else:
-                day = int(time[1])
-            sst.append((time[0],day,utime,time[3]))
-            if start_stop[1] != None: # User-inputed end timestamp
-                dtime = int(time[2])
-                utime = int(start_stop[1])
-                if utime > dtime: # Timestamp is for yesterday
-                    day = int(time[1]) - 1
-                else:
-                    day = int(time[1])
-                sst.append([time[0],day,utime,time[3]])
-            else: # End timestamp defaults to start timestamp
-                sst.append(sst[0])
-        else:     # If neither start nor stop timestamp provided
-            sst.append(time) # start
-            sst.append(time) # stop
+                stop = start
+        else:
+            start = time
+            stop = time
+        if start > time: # If user-inputted timestamp is LATER than default timestamp
+            start = fixdate(start, -1, 0) # Then it's from yesterday
+            stop = fixdate(stop, -1, 0)
         # Excise timestamp from the text
-        if match:
-            text = text[:match.start()-1] + text[match.end():]
-        sst.append(str(text))
-        tweets.append(sst)
-    # sort first on time, then on day
-    tweets.sort(key=lambda triple: int(triple[0][2]))
-    tweets.sort(key=lambda triple: int(triple[0][1]))
+        #if match:
+        #    text = text[:match.start()-1] + text[match.end():]
+        tweets.append([start,stop,str(text)])
+        print(start)
+        print(text)
+        # Check for user-inputted start/stop timestamp.
+            # sort first on start time, then on day
+    tweets.sort(key=lambda triple: 100*triple[0].hour + triple[0].minute)
+    tweets.sort(key=lambda triple: 100*triple[0].day)
     return tweets
+
+# Fixdate, takes input date string and moves it by 'offset' minutes (military)
+# Eg: date="1 Jan 1990 100", offset="-200" -> "31 Dec 1989 2300"
+def fixdate(date, dayoff, hroff):
+    delta = datetime.timedelta(0,0,dayoff,hroff)
+    return date + delta
