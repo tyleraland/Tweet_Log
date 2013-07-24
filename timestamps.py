@@ -43,8 +43,8 @@ def sort_time(jsfile):
         #if match:
         #    text = text[:match.start()-1] + text[match.end():]
         tweets.append([start,stop,str(text)])
-        print(start)
-        print(text)
+        #print(start)
+        #print(text)
         # Check for user-inputted start/stop timestamp.
             # sort first on start time, then on day
     tweets.sort(key=lambda triple: 100*triple[0].hour + triple[0].minute)

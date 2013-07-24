@@ -2,6 +2,8 @@ import re
 import csv
 
 wo = re.compile('([a-zA-Z]*.?[a-zA-Z]+)@? ([\d.\s]+)+')
+#eat = re.compile('([a-z][\.a-z]*\.[a-z]+)\.([0-9]*)\.([a-z]*)')
+eat = re.compile('([a-z][\.a-z]*\.[a-z]+)\.([0-9]*)([a-z]*)')
 wolog = csv.writer(open('DUMMYCSV.csv','w'), quoting=csv.QUOTE_ALL)
 wolog.writerow(["start_time","end_time",
                 "wo_id","exercise","lifts"]) # Header
@@ -26,6 +28,17 @@ def workout(tweet,wo_id):
         row.extend([lift_name, lifts])
         wolog.writerow(row)
 
+def consume(tweet):
+    text = tweet[2][3:]
+    match = re.findall(eat,text)
+    name = match[0][0]
+    if match[0][1]:
+        quantity = match[0][1]
+    else:
+        quantity = -1
+    if match[0][2]:
+        unit = match[0][2]
+
 def process(tweets):
     wo_id = 1
     for tweet in tweets:
@@ -34,3 +47,5 @@ def process(tweets):
         if clue == 'wo': # workout
             workout(tweet, wo_id)
             wo_id += 1
+        if clue == 'eat': # eat
+            consume(tweet)
