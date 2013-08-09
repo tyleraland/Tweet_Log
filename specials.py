@@ -4,20 +4,19 @@ import pickle
 
 wo = re.compile('([a-zA-Z]*.?[a-zA-Z]+)@? ([\d.\s]+)+')
 eat = re.compile('([.a-z]*[a-z]+)(?:\.)?([0-9]*)([a-z]*)')
-wolog = csv.writer(open('DUMMYCSV.csv','w'), quoting=csv.QUOTE_ALL)
+wolog = csv.writer(open('workout_log.csv','w'), quoting=csv.QUOTE_ALL)
 # wolog header
 # times: "year monthnumber daynumber hour minute"
 # wo_id is shared between sets from the same session
 # lifts: "weight1:rep1-rep2-...-repN;weight2:rep1-rep2-..."
-wolog.writerow(["start_time","end_time",
-                "wo_id","exercise","lifts"])
+wolog.writerow(["start_time","end_time","wo_id","exercise","lifts"])
 
+new_foods = [] # Later written to new food file
 newff = open('needs_ids','w') # new food file
-new_foods = []
 ft = open('food_table', 'r')
 macro_table = pickle.load(open('macro_table', 'r'))
 food_table = pickle.load(ft)
-ft.close()
+ft.close() # Will re-write file later, so need to close now
 
 def workout(tweet,wo_id):
     text = tweet[2][3:]
@@ -71,5 +70,3 @@ def process(tweets):
     # save new_foods for later identification
     for food in set(new_foods):
         newff.write("%s\n" % food)
-    # Save food_table to file
-    #newff.close()
