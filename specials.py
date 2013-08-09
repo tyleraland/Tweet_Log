@@ -1,5 +1,6 @@
 import re
 import csv
+import pickle
 
 wo = re.compile('([a-zA-Z]*.?[a-zA-Z]+)@? ([\d.\s]+)+')
 eat = re.compile('([.a-z]*[a-z]+)(?:\.)?([0-9]*)([a-z]*)')
@@ -11,8 +12,12 @@ wolog = csv.writer(open('DUMMYCSV.csv','w'), quoting=csv.QUOTE_ALL)
 wolog.writerow(["start_time","end_time",
                 "wo_id","exercise","lifts"])
 
+newff = open('needs_ids','w') # new food file
 new_foods = []
-food_table = {} # Load from file
+ft = open('food_table', 'r')
+macro_table = pickle.load(open('macro_table', 'r'))
+food_table = pickle.load(ft)
+ft.close()
 
 def workout(tweet,wo_id):
     text = tweet[2][3:]
@@ -34,18 +39,24 @@ def workout(tweet,wo_id):
         row.extend([lift_name, lifts])
         wolog.writerow(row)
 
-def consume(tweet):
-    text = tweet[2][3:]
+def consume(text):
     match = re.findall(eat,text)
-    name = match[0][0]
-    if match[0][1]:
-        quantity = match[0][1]
-    else:
-        quantity = -1 # Force breakage.  Each db_id should have default value
-    if match[0][2]:
-        unit = match[0][2]
-    if not name in food_table:
-        new_foods.append(name)
+    for food in match:
+        name = food[0]
+        if food[1]:
+            quantity = food[1]
+        else:
+            quantity = -1 # Force exception. TODO: Each db_id should have default value
+        if food[2]:
+            unit = food[2]
+        if name in macro_table:
+            multi = reduce( lambda a,b: a+b, map( lambda tup: tup[1], macro_table[name]))
+            macro = ''
+            for tup in macro_table[name]:
+                macro += tup[0] + '.' + str(int(tup[1]*multi)) + 'g' + ' '
+            consume(macro)
+        elif not name in food_table:
+            new_foods.append(name)
 
 def process(tweets):
     wo_id = 1
@@ -56,8 +67,9 @@ def process(tweets):
             workout(tweet, wo_id)
             wo_id += 1
         if clue == 'eat': # eat
-            consume(tweet)
-    # Ask user about new_foods
-    for food in new_foods:
-        print(food)
+            consume(tweet[2][3:])
+    # save new_foods for later identification
+    for food in set(new_foods):
+        newff.write("%s\n" % food)
     # Save food_table to file
+    #newff.close()

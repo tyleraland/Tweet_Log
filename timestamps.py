@@ -25,15 +25,27 @@ def sort_time(jsfile):
         # Subtract 7 hours from UTC time to give west coast time
         # For now, ignore daylight savings
         time = fixdate(time, 0, -7)
-        match = re.search(timestamp, text) # matches $100.200
-        if match:
-            ss = match.groups()
-            start = time.replace(hour=int(ss[0][:-2]), minute=int(ss[0][-2:]))
-            if ss[1]:
-                stop = time.replace(hour=int(ss[1][:-2]), minute=int(ss[1][-2:]))
+        # Try to match the regex timestamp pattern
+        try:
+            match = re.search(timestamp, text) # matches $100.200
+            if match:
+                ss = match.groups()
+                if len(ss[0]) <= 2: # minutes omitted, like $9
+                    start = time.replace(hour=int(ss[0]))
+                else:
+                    start = time.replace(hour=int(ss[0][:-2]), minute=int(ss[0][-2:]))
+                if ss[1]:
+                    if len(ss[1]) <= 2: # minutes omitted
+                        stop = time.replace(hour=int(ss[1]))
+                    else:
+                        stop = time.replace(hour=int(ss[1][:-2]), minute=int(ss[1][-2:]))
+                else:
+                    stop = start
             else:
-                stop = start
-        else:
+                start = time
+                stop = time
+        except ValueError: # User input malformed timestamp, like '$9'
+            print("MALFORMED TIMESTAMP: " + text)
             start = time
             stop = time
         if start > time: # If user-inputted timestamp is LATER than default timestamp
@@ -43,8 +55,6 @@ def sort_time(jsfile):
         #if match:
         #    text = text[:match.start()-1] + text[match.end():]
         tweets.append([start,stop,str(text)])
-        #print(start)
-        #print(text)
         # Check for user-inputted start/stop timestamp.
             # sort first on start time, then on day
     tweets.sort(key=lambda triple: 100*triple[0].hour + triple[0].minute)
