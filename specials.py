@@ -1,6 +1,7 @@
 import re
 import csv
 import pickle
+from pprint import pprint
 
 wo = re.compile('([a-zA-Z]*.?[a-zA-Z]+)@? ([\d.\s]+)+')
 eat = re.compile('([.a-z]*[a-z]+)(?:\.)?([0-9]*)([a-z]*)')
@@ -11,12 +12,21 @@ wolog = csv.writer(open('workout_log.csv','w'), quoting=csv.QUOTE_ALL)
 # lifts: "weight1:rep1-rep2-...-repN;weight2:rep1-rep2-..."
 wolog.writerow(["start_time","end_time","wo_id","exercise","lifts"])
 
+foodlog = csv.writer(open('food_log.csv','w'), quoting=csv.QUOTE_ALL)
+foodlog.writerow(["time","db_id","quantity","units"])
+
 new_foods = [] # Later written to new food file
 newff = open('needs_ids','w') # new food file
 ft = open('food_table', 'r')
 macro_table = pickle.load(open('macro_table', 'r'))
 food_table = pickle.load(ft)
 ft.close() # Will re-write file later, so need to close now
+
+# Multiplier; number of units in 100 grams
+conv_table = {'oz':28.0, 'shot':28.0, 'g':1.0, 'mg':1000.0, 'kg':.001} 
+servings = {'egg':(50,'g'), 'vitad':(1000,'IU'), 'coil':(15,'g'), 'ooil':(15,'g'),
+            'mct':(15,'g'), 'butr':(15,'g'), 'butter':(15,'g'), 'iodine':(1,'mcg'),
+            'koil':(1,'mg'), 'nyeast':(10,'g'), 'whey':(30,'g')} 
 
 def workout(tweet,wo_id):
     text = tweet[2][3:]
@@ -38,35 +48,74 @@ def workout(tweet,wo_id):
         row.extend([lift_name, lifts])
         wolog.writerow(row)
 
-def consume(text):
+def consume(start, text):
     match = re.findall(eat,text)
-    for food in match:
+    for food in match: # food = name[,quantity[,units]]
+        unit = ''
         name = food[0]
-        if food[1]:
-            quantity = food[1]
-        else:
-            quantity = -1 # Force exception. TODO: Each db_id should have default value
-        if food[2]:
-            unit = food[2]
+        # Check if foodname is a macro for several foods
+        # Determine multiplier to scale macro by
         if name in macro_table:
-            multi = reduce( lambda a,b: a+b, map( lambda tup: tup[1], macro_table[name]))
+            if food[1]: # If quantity provided, grab it
+                quantity = int(food[1])
+                if food[2]: 
+                    unit = food[2]
+                if unit in conv_table:
+                    quantity *= conv_table[unit]
+                    unit = 'g'
+                    multi = quantity / reduce( lambda a,b: a+b, map( lambda tup: tup[1], macro_table[name]))
+                elif unit == '':
+                    multi = quantity
+            else:
+                multi = 1
             macro = ''
             for tup in macro_table[name]:
                 macro += tup[0] + '.' + str(int(tup[1]*multi)) + 'g' + ' '
-            consume(macro)
-        elif not name in food_table:
+            consume(start, macro)
+            continue
+        if food[1]:
+            quantity = int(food[1])
+        else:
+            quantity = 1
+        if food[2]:
+            unit = food[2]
+        # If units are omitted (e.g. fish.3) there are several interpretations:
+        # Item may have unique unit/quantity in servings table
+        # Otherwise, if quantity <= 16 assume quantity is ounces
+        # If larger quantity (e.g. fish.200), assume grams
+        if not unit:
+            if name in servings:
+                quantity *= servings[name][0]
+                unit = servings[name][1]
+            elif quantity <= 16:
+                unit = 'oz'
+            else:
+                unit = 'g'
+        if unit in conv_table:
+            quantity *= conv_table[unit]
+            unit = 'g'
+        else: #TODO: handle weird units
+            pass
+            #print("WHAT TO DO WITH UNIT " + unit + " ????") # Others: mcg, IU ... nonfood units
+        if not name in food_table:
             new_foods.append(name)
+        elif food_table[name] > 0: # food item
+            foodlog.writerow([start,name,food_table[name],int(quantity),unit])
+        else: #TODO
+            pass #nonfood item
 
 def process(tweets):
     wo_id = 1
     for tweet in tweets:
+        start = tweet[0]
+        stop = tweet[1]
         text = tweet[2]
         clue = text.split()[0]
         if clue == 'wo': # workout
             workout(tweet, wo_id)
             wo_id += 1
         if clue == 'eat': # eat
-            consume(tweet[2][3:])
+            consume(start, tweet[2][3:])
     # save new_foods for later identification
     for food in set(new_foods):
         newff.write("%s\n" % food)

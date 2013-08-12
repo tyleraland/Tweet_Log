@@ -25,7 +25,7 @@ def sort_time(jsfile):
         text = tweet["text"].lower()
         time = tweet["created_at"]   # default timestamp
         time = str(time).split()[1:]
-        #datetime - year, month, day, hour, minute
+        #datetime - year, month, day, hour, minute, second
         time = datetime.datetime(int(time[4]), month_num[time[0]], int(time[1]),
                                  int(time[2][0:2]), int(time[2][3:5]))
         # Subtract 7 hours from UTC time to give west coast time
@@ -45,6 +45,7 @@ def sort_time(jsfile):
                     stop = time.replace(hour=int(ss[1][:-2]), minute=int(ss[1][-2:]))
             else:
                 stop = start
+            text = text[:match.start()] + text[match.end():]
         except Exception: # Timestamp omitted or malformed; ValueError/AttributeError
             start = time
             stop = time
