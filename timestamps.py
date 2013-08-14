@@ -11,7 +11,7 @@ timestamp = re.compile('\$(\d+).?(\d+)?') # User-inputted timestamp
 # Fixdate, takes input date string and moves it by 'offset' minutes (military)
 # Eg: date="1 Jan 1990 100", offset="-200" -> "31 Dec 1989 2300"
 def fixdate(date, dayoff, hroff):
-    delta = datetime.timedelta(0,0,dayoff,hroff)
+    delta = datetime.timedelta(days=dayoff,hours=hroff)
     return date + delta
 
 # Return list of [start_time, stop_time, text] sorted by start_time
@@ -45,7 +45,8 @@ def sort_time(jsfile):
                     stop = time.replace(hour=int(ss[1][:-2]), minute=int(ss[1][-2:]))
             else:
                 stop = start
-            text = text[:match.start()] + text[match.end():]
+            #TODO
+            #text = text[:match.start()] + text[match.end():]
         except Exception: # Timestamp omitted or malformed; ValueError/AttributeError
             start = time
             stop = time

@@ -13,7 +13,7 @@ wolog = csv.writer(open('workout_log.csv','w'), quoting=csv.QUOTE_ALL)
 wolog.writerow(["start_time","end_time","wo_id","exercise","lifts"])
 
 foodlog = csv.writer(open('food_log.csv','w'), quoting=csv.QUOTE_ALL)
-foodlog.writerow(["time","db_id","quantity","units"])
+foodlog.writerow(["time","text","db_id","quantity","units"])
 
 new_foods = [] # Later written to new food file
 newff = open('needs_ids','w') # new food file
