@@ -63,14 +63,18 @@ def consume(start, text):
                 if unit in conv_table:
                     quantity *= conv_table[unit]
                     unit = 'g'
-                    multi = quantity / reduce( lambda a,b: a+b, map( lambda tup: tup[1], macro_table[name]))
+                    multi = quantity / reduce( lambda a,b: a+b, map( lambda tup: tup[1] if len(tup) > 1 else 0,  macro_table[name]))
                 elif unit == '':
                     multi = quantity
             else:
                 multi = 1
             macro = ''
             for tup in macro_table[name]:
-                macro += tup[0] + '.' + str(int(tup[1]*multi)) + 'g' + ' '
+                if len(tup) > 1:
+                    macro += tup[0] + '.' + str(int(tup[1]*multi)) + 'g' + ' '
+                else:
+                    macro += tup[0] + ' '
+            print(macro)
             consume(start, macro)
             continue
         if food[1]:
