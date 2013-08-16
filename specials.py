@@ -98,7 +98,6 @@ def consume(start, text):
         if unit in conv_table:
             quantity *= conv_table[unit]
             unit = 'g'
-            if quantity > 
         else: #TODO: handle weird units
             pass
             #print("WHAT TO DO WITH UNIT " + unit + " ????") # Others: mcg, IU ... nonfood units
