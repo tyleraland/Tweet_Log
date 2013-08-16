@@ -24,9 +24,12 @@ ft.close() # Will re-write file later, so need to close now
 
 # Multiplier; number of units in 100 grams
 conv_table = {'oz':28.0, 'shot':28.0, 'g':1.0, 'mg':.001, 'kg':1000, 'f':1.0} 
-servings = {'egg':(50,'g'), 'vitad':(1000,'IU'), 'coil':(15,'g'), 'ooil':(15,'g'),
-            'mct':(15,'g'), 'butr':(15,'g'), 'butter':(15,'g'), 'iodine':(1,'mcg'),
-            'koil':(1,'mg'), 'nyeast':(10,'g'), 'whey':(30,'g')} 
+servings = {'egg':(50,'g'), 'vitad':(1000,'IU'), 'coil':(10,'g'), 'ooil':(10,'g'),
+           'lard':(10,'g'), 'mct':(10,'g'), 'butr':(10,'g'), 'butter':(10,'g'), 'tallow':(10,'g'),
+            'koil':(1,'mg'), 'nyeast':(10,'g'), 'whey':(30,'g'), 'iodine':(1,'mcg'),
+            'cinna':(500,'mg'), 'thyme':(500,'mg'), 'curryp':(500,'mg'),'crm':(15,'g'),
+            'bouillon':(1,'g'),'paprika':(250,'mg'), 'turmeric':(200,'mg'),'oregano':(200,'mg'),
+            'cumin':(250,'mg')} 
 
 def workout(tweet,wo_id):
     text = tweet[2][3:]
