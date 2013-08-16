@@ -42,7 +42,9 @@ counter = 0
 for line in food:
     #print(line[1],line[2],line[3]) #text,db_id, quantity
     dt = line[0].split()
-    date = dt[0]
+    date = dt[0]#[:7]
+    if date[:7] != '2013-04':
+        continue
     #date = dt[0].split('-')
     #time = datetime[1]
     #date = datetime(int(date[0]), int(date[1]), int(date[2]))
@@ -64,9 +66,9 @@ for line in food:
     #print("Carbs: " + str(nuts[63]))
     #print("Protein: " + str(nuts[109]))
     #print("Fat: " + str(nuts[125]))
-    if counter > 100:
-        break
-    counter += 1
+    #if counter > 100:
+    #    break
+    #counter += 1
 
 for day in daynuts.keys():
     print("day:     " + day)

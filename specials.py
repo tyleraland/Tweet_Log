@@ -23,7 +23,7 @@ food_table = pickle.load(ft)
 ft.close() # Will re-write file later, so need to close now
 
 # Multiplier; number of units in 100 grams
-conv_table = {'oz':28.0, 'shot':28.0, 'g':1.0, 'mg':1000.0, 'kg':.001} 
+conv_table = {'oz':28.0, 'shot':28.0, 'g':1.0, 'mg':.001, 'kg':1000, 'f':1.0} 
 servings = {'egg':(50,'g'), 'vitad':(1000,'IU'), 'coil':(15,'g'), 'ooil':(15,'g'),
             'mct':(15,'g'), 'butr':(15,'g'), 'butter':(15,'g'), 'iodine':(1,'mcg'),
             'koil':(1,'mg'), 'nyeast':(10,'g'), 'whey':(30,'g')} 
@@ -74,7 +74,7 @@ def consume(start, text):
                     macro += tup[0] + '.' + str(int(tup[1]*multi)) + 'g' + ' '
                 else:
                     macro += tup[0] + ' '
-            print(macro)
+            #print(macro)
             consume(start, macro)
             continue
         if food[1]:
@@ -98,6 +98,7 @@ def consume(start, text):
         if unit in conv_table:
             quantity *= conv_table[unit]
             unit = 'g'
+            if quantity > 
         else: #TODO: handle weird units
             pass
             #print("WHAT TO DO WITH UNIT " + unit + " ????") # Others: mcg, IU ... nonfood units
@@ -119,7 +120,7 @@ def process(tweets):
             workout(tweet, wo_id)
             wo_id += 1
         if clue == 'eat': # eat
-            consume(start, tweet[2][3:])
+            consume(start, tweet[2][3:].lower())
     # save new_foods for later identification
     for food in set(new_foods):
         newff.write("%s\n" % food)
